@@ -4,44 +4,76 @@
 
 ## Design Principle
 
-DVRPC won't reinvent consensus verification. It will use existing, battle-tested light client implementations and focus on what's missing: proof generation and decentralized access.
+DVRPC won't reinvent consensus verification. It will use existing light client implementations and focus on what's missing: proof generation, verification, and decentralized access.
+
+## Two Layers
+
+DVRPC consists of two distinct layers:
+
+### 1. Verification Layer
+
+Handles data verification and proof generation:
+- Integrates with existing light clients (pluggable)
+- Verifies proofs against light client's state root
+- Generates receipt proofs (no standard RPC exists for this)
+- Returns verified data with proofs to clients
+
+### 2. Routing Layer
+
+Handles decentralized request distribution:
+- P2P node discovery via Kademlia DHT
+- Request routing across network nodes
+- Health and availability tracking
+- No central point of failure
+
+**Important:** The P2P layer is for routing, not consensus. Each node's light client handles consensus independently.
+
+## What We Use vs What We Build
+
+| Component | We Use (Existing) | We Build |
+|-----------|-------------------|----------|
+| Light client | Existing implementations | Integration layer |
+| State proofs | `eth_getProof` (EIP-1186) | Verification logic |
+| Receipt proofs | — | Full implementation |
+| P2P networking | libp2p | Discovery + routing |
 
 ## Planned Components
 
-### 1. Light Client Layer
+### Light Client Integration
 
-Pluggable integration with existing light clients. Will provide verified block headers and state roots without running a full node. See [Light Clients](light-clients.md) for details.
+Pluggable integration with existing light clients. Will provide verified state roots without running a full node. See [Light Clients](light-clients.md) for details.
 
-### 2. Proof Engine
+### Proof Engine
 
-Will generate cryptographic proofs for responses:
-- EIP-1186 state proofs for account and storage queries
-- Receipt trie proofs for transaction receipts
+- **State proofs:** Call `eth_getProof` on upstream, verify against light client's state root
+- **Receipt proofs:** Fetch block receipts, build trie, generate Merkle proof (no RPC exists for this)
 
-### 3. RPC Server
+### RPC Server
 
-Standard Ethereum JSON-RPC interface. Will be compatible with existing tools and libraries (ethers.js, web3.js, etc.).
+Standard Ethereum JSON-RPC interface. Will be compatible with existing tools (ethers.js, web3.js, etc.).
 
-### 4. P2P Network (Future)
+### P2P Network
 
-- Node discovery
-- Header gossip
-- Decentralized request routing
+- **Node discovery** - Nodes find each other via Kademlia DHT
+- **Request routing** - Client requests distributed across network
+- **Health tracking** - Know which nodes are available
+- **No central point** - Decentralized access
 
 ## Planned Request Flow
 
 ```
-Request → RPC Server → Fetch from upstream
-                     → Verify against light client state root
-                     → Generate/attach proof
-                     → Return verified response
+Client Request
+    ↓
+P2P Routing → Select available node
+    ↓
+RPC Server → Receive request
+    ↓
+Proof Engine → Fetch from upstream
+             → Verify against light client state root
+             → Generate/attach proof
+    ↓
+Response with proof → Client
 ```
-
-1. Client sends JSON-RPC request
-2. RPC server fetches data from upstream provider
-3. Response verified against light client's state root
-4. Merkle proof generated and attached
-5. Verified response returned to client
 
 ## Diagram
 
@@ -51,10 +83,15 @@ flowchart TB
         APP[Application]
     end
 
-    subgraph DVRPC["DVRPC Node"]
+    subgraph RoutingLayer["Routing Layer (P2P)"]
+        DHT[Kademlia DHT]
+        ROUTE[Request Router]
+    end
+
+    subgraph VerificationLayer["Verification Layer"]
         RPC[RPC Server]
         PE[Proof Engine]
-        LC[Light Client Layer]
+        LC[Light Client]
         CACHE[Cache]
     end
 
@@ -63,12 +100,13 @@ flowchart TB
         BEACON[Beacon Chain]
     end
 
-    APP -->|JSON-RPC request| RPC
+    APP -->|request| DHT
+    DHT --> ROUTE
+    ROUTE --> RPC
     RPC --> PE
-    PE -->|fetch data| UPSTREAM
-    LC -->|sync headers| BEACON
+    PE -->|eth_getProof| UPSTREAM
+    LC -->|sync| BEACON
     PE -->|verify against| LC
-    PE -->|generate proof| PE
     PE --> CACHE
     RPC -->|response + proof| APP
 ```

@@ -1,28 +1,26 @@
 # Light Clients
 
+## Role in DVRPC
+
+The light client provides **verified state roots**.
+
+DVRPC doesn't implement consensus. It integrates existing light client implementations that already solve this problem. The light client syncs with the beacon chain and provides verified block headers, which DVRPC uses to verify proofs.
+
 ## Pluggable Architecture
 
 DVRPC is designed to work with any Ethereum light client that provides:
 
-- Verified state roots
-- Header tracking
-- Finality information
-
-## Planned Light Client Support
-
-| Client | Language | Integration | Status |
-|--------|----------|-------------|--------|
-| Helios | Rust | Library | First target |
-| Lodestar | TypeScript | Sidecar | Planned |
-| Nimbus | Nim | Sidecar | Planned |
+- **Verified state roots** - The state root for a given block
+- **Header tracking** - Access to verified block headers
+- **Finality information** - Whether a block is finalized/safe/head
 
 ## Why Pluggable?
 
 - **No single point of failure** - Bugs in one light client won't affect all DVRPC nodes
-- **Community extensible** - Anyone will be able to add support for new light clients
-- **Operator choice** - Node operators will choose what fits their setup and trust model
+- **Extensible** - Anyone can add support for new light clients
+- **Operator choice** - Node operators choose what fits their setup
 
-## Adding a Light Client
+## Integration Interface
 
 Light clients will need to implement the `ConsensusProvider` trait:
 
@@ -39,4 +37,10 @@ trait ConsensusProvider {
 }
 ```
 
-This minimal interface will allow integration with any light client implementation.
+This minimal interface will allow integration with any light client implementation, whether as a library or sidecar process.
+
+## What the Light Client Does NOT Do
+
+- **Not involved in P2P** - Each node's light client syncs independently
+- **Not shared across nodes** - No header gossip between DVRPC nodes
+- **Not our code** - We integrate existing implementations, not build our own
