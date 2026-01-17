@@ -9,16 +9,16 @@ Over 70% of Ethereum RPC traffic flows through centralized providers like Infura
 - **Censorship risk** - Centralized control over blockchain access
 - **Token gates** - Some decentralized alternatives require tokens to use
 
-## Current Solutions
+## What Exists Today
 
-| Solution | Verified | Distributed Routing | No Token |
-|----------|----------|---------------------|----------|
-| Infura/Alchemy | No | No | No |
-| Lava/Pocket | No* | Yes | No |
-| Light Clients | Yes | No (local only) | Yes |
-| **DVRPC** | **Yes** | **Yes** | **Yes** |
+| Solution | Verified | Proof Returned | Distributed | No Token |
+|----------|----------|----------------|-------------|----------|
+| Infura/Alchemy | - | - | - | - |
+| Lava/Pocket | - | - | + | - |
+| Light Clients | + | - (internal only) | - | + |
+| **DVRPC** | **+** | **+** | **+** | **+** |
 
-*Lava and Pocket compare responses from multiple providers but don't cryptographically verify them.
+**Key difference:** DVRPC returns proofs with consensus-verified state root. Clients can verify independently.
 
 ## The DVRPC Approach
 
