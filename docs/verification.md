@@ -2,18 +2,18 @@
 
 ## The Trust Problem
 
-When you call `eth_getBalance` on Infura:
+When you call `eth_getBalance` on a centralized RPC:
 
-1. Infura returns "5 ETH"
-2. You trust Infura is telling the truth
+1. Provider returns "5 ETH"
+2. You trust the provider is telling the truth
 3. No way to verify
 
 Even `eth_getProof` doesn't fully solve this:
 
-1. Infura returns balance + proof + state root
+1. Provider returns balance + proof + state root
 2. You verify proof against state root
-3. But state root came from Infura too
-4. Still trusting Infura
+3. But state root came from the provider too
+4. Still trusting the provider
 
 ## How DVRPC Solves This
 

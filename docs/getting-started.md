@@ -26,7 +26,7 @@ host = "127.0.0.1"
 port = 8545
 
 [upstream]
-url = "https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
+url = "https://your-rpc-provider.com/YOUR_KEY"
 
 [beacon]
 url = "https://beacon-node.example.com"

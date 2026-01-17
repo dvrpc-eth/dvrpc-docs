@@ -2,7 +2,7 @@
 
 ## The Problem
 
-Over 70% of Ethereum RPC traffic flows through centralized providers like Infura, Alchemy, and QuickNode. This creates critical issues:
+Over 70% of Ethereum RPC traffic flows through centralized providers. This creates critical issues:
 
 - **No verification** - Applications blindly trust responses
 - **Single points of failure** - Provider outages affect millions of users
@@ -13,8 +13,8 @@ Over 70% of Ethereum RPC traffic flows through centralized providers like Infura
 
 | Solution | Verified | Proof Returned | Distributed | No Token |
 |----------|----------|----------------|-------------|----------|
-| Infura/Alchemy | - | - | - | - |
-| Lava/Pocket | - | - | + | - |
+| Centralized RPCs | - | - | - | - |
+| Decentralized RPC Networks | - | - | + | - |
 | Light Clients | + | - (internal only) | - | + |
 | **DVRPC** | **+** | **+** | **+** | **+** |
 

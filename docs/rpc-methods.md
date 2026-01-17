@@ -1,6 +1,6 @@
 # RPC Methods
 
-DVRPC supports standard Ethereum JSON-RPC methods. It's a drop-in replacement for Infura/Alchemy.
+DVRPC supports standard Ethereum JSON-RPC methods. It's a drop-in replacement for any centralized RPC provider.
 
 ## How It Works
 
@@ -117,7 +117,7 @@ These methods are passed to upstream RPC without verification:
 
 **Without DVRPC:**
 ```
-Client → Infura → "Balance is 5 ETH" (trust Infura)
+Client → RPC Provider → "Balance is 5 ETH" (trust provider)
 ```
 
 **With DVRPC (no header):**
