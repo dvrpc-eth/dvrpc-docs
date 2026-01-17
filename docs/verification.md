@@ -1,8 +1,82 @@
 # Verification
 
-## Overview
+## The Trust Problem
 
-DVRPC verifies blockchain data using cryptographic proofs. The light client provides trusted state roots, and we verify that data matches those roots.
+When you call `eth_getBalance` on Infura:
+
+1. Infura returns "5 ETH"
+2. You trust Infura is telling the truth
+3. No way to verify
+
+Even `eth_getProof` doesn't fully solve this:
+
+1. Infura returns balance + proof + state root
+2. You verify proof against state root
+3. But state root came from Infura too
+4. Still trusting Infura
+
+## How DVRPC Solves This
+
+DVRPC adds **consensus verification**:
+
+1. Light client syncs with beacon chain
+2. Sync committee (512 validators) signs each block
+3. State root is verified by consensus, not trusted from RPC
+4. Proof verified against consensus-signed state root
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Verification Flow                        │
+│                                                             │
+│  Beacon Chain                                               │
+│       │                                                     │
+│       ▼                                                     │
+│  Sync Committee signs block                                 │
+│       │                                                     │
+│       ▼                                                     │
+│  Light Client verifies signature                            │
+│       │                                                     │
+│       ▼                                                     │
+│  Trusted State Root                                         │
+│       │                                                     │
+│       ▼                                                     │
+│  Verify account proof against state root                    │
+│       │                                                     │
+│       ▼                                                     │
+│  Data is correct (mathematically proven)                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Consensus Proof Fields
+
+| Field | What It Proves |
+|-------|----------------|
+| stateRoot | The state root for this block |
+| slot | Which beacon chain slot this is |
+| syncCommitteeBits | Which of 512 validators signed |
+| syncCommitteeSignature | Aggregated BLS signature |
+
+## Client-Side Verification
+
+With the proof and consensus data, clients can verify:
+
+1. **Sync committee signature** - Verify BLS signature against known committee
+2. **State root authenticity** - State root is signed by consensus
+3. **Account proof** - Merkle proof valid against state root
+4. **Data integrity** - Balance/storage matches proof
+
+No trust required. Math only.
+
+## What You Need to Verify
+
+To fully verify client-side:
+
+1. Current sync committee public keys (from beacon chain)
+2. BLS signature verification
+3. Merkle-Patricia trie proof verification
+
+Our JS library will handle this.
 
 ## How Proofs Work
 
@@ -23,26 +97,13 @@ EIP-1186 defines a standard RPC method `eth_getProof` that returns Merkle proofs
 
 ### How We Use It
 
-We **call** `eth_getProof`, we don't implement it:
+We call `eth_getProof` on upstream, then verify against our light client's state root:
 
 1. Client requests `eth_getBalance(address)`
 2. We call `eth_getProof(address)` on upstream RPC
 3. Upstream returns account data + Merkle proof
 4. We verify the proof against light client's state root
-5. If valid, return result + proof to client
-
-```
-Upstream RPC                    DVRPC Node                     Client
-     │                              │                            │
-     │  ←── eth_getProof(addr) ──── │                            │
-     │                              │                            │
-     │  ──── account + proof ────→  │                            │
-     │                              │                            │
-     │                     verify against                        │
-     │                     light client root                     │
-     │                              │                            │
-     │                              │ ── result + proof ───────→ │
-```
+5. If valid, return result (+ proof if header set)
 
 ### What the Proof Contains
 
@@ -64,49 +125,4 @@ There is no `eth_getReceiptProof` RPC method. This is a gap we fill.
 4. Verify against `receiptsRoot` in the block header
 5. Return receipt + proof to client
 
-```
-Upstream RPC                    DVRPC Node                     Client
-     │                              │                            │
-     │  ← eth_getBlockReceipts() ── │                            │
-     │                              │                            │
-     │  ──── all receipts ───────→  │                            │
-     │                              │                            │
-     │                     build receipt trie                    │
-     │                     generate proof                        │
-     │                     verify against header                 │
-     │                              │                            │
-     │                              │ ── receipt + proof ──────→ │
-```
-
 No standard RPC provides this.
-
-## Planned Client-Side Verification
-
-Clients receiving DVRPC responses will be able to verify proofs independently:
-
-1. Get the state root for the block (from their own light client, or trust DVRPC's)
-2. Verify the Merkle proof against that root
-3. Confirm the result matches the claimed value
-
-```
-Trusted state root + Proof + Value = Verified ✓
-```
-
-## Future: JS Verification Library
-
-We plan to provide a lightweight JavaScript library for client-side verification:
-
-```javascript
-import { verifyStateProof, verifyReceiptProof } from '@dvrpc/verify';
-
-const response = await fetch(DVRPC_URL, { ... });
-const { result, proof } = await response.json();
-
-// Verify state proof (EIP-1186)
-const validState = verifyStateProof(stateRoot, proof, result);
-
-// Verify receipt proof (our format)
-const validReceipt = verifyReceiptProof(receiptsRoot, proof, result);
-```
-
-This will allow frontends to verify responses without trusting any RPC provider.
