@@ -59,6 +59,8 @@ Standard Ethereum JSON-RPC interface. Will be compatible with existing tools (et
 - **Health tracking** - Know which nodes are available
 - **No central point** - Decentralized access
 
+See [P2P Architecture](p2p.md) for details on why P2P is for availability, not verification.
+
 ## Planned Request Flow
 
 ```

@@ -18,6 +18,7 @@ DVRPC integrates existing light clients (pluggable architecture) for consensus v
 
 - [Introduction](docs/introduction.md) - Problem statement and approach
 - [Architecture](docs/architecture.md) - Verification and routing layers
+- [P2P Network](docs/p2p.md) - Node discovery, routing, and availability
 - [Getting Started](docs/getting-started.md) - Planned installation and usage
 - [RPC Methods](docs/rpc-methods.md) - Planned JSON-RPC methods
 - [Verification](docs/verification.md) - How proofs work
